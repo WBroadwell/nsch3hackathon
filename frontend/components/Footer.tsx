@@ -44,6 +44,11 @@ export default function Footer() {
                                     Event Map
                                 </Link>
                             </li>
+                            <li>
+                                <Link href="/signin" className="text-gray-400 hover:text-rose-400 transition text-sm">
+                                    Organization Sign In
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 

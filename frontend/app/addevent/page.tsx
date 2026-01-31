@@ -1,7 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { NewEvent } from "@/types/NewEvent";
+import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 interface LocationResult {
     display_name: string;
@@ -10,6 +13,8 @@ interface LocationResult {
 }
 
 export default function AddEvent() {
+    const { user, token, isLoading } = useAuth();
+    const router = useRouter();
     const [submissionStatus, setSubmissionStatus] = useState<string | null>(null);
     const [locationQuery, setLocationQuery] = useState("");
     const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
@@ -37,6 +42,13 @@ export default function AddEvent() {
             description: "",
         },
     });
+
+    // Redirect if not authenticated
+    useEffect(() => {
+        if (!isLoading && !user) {
+            router.push("/signin");
+        }
+    }, [user, isLoading, router]);
 
     // Search for locations using Nominatim
     const searchLocation = async () => {
@@ -73,17 +85,23 @@ export default function AddEvent() {
             return;
         }
 
+        if (!token) {
+            setSubmissionStatus("Please sign in to add events.");
+            return;
+        }
+
         console.log("Submitting event data:", data);
         const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
         try {
-            await fetch(`${baseUrl}/events`, {
+            const response = await fetch(`${baseUrl}/events`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     name: data.eventName,
-                    host: data.eventHost,
+                    host: data.eventHost || user?.organization_name,
                     date: data.date,
                     location: selectedLocation.address,
                     latitude: selectedLocation.lat,
@@ -91,14 +109,59 @@ export default function AddEvent() {
                     description: data.description,
                 }),
             });
-            setSubmissionStatus("Successfully added event.");
-            reset();
-            setSelectedLocation(null);
-            setLocationQuery("");
+
+            if (response.ok) {
+                setSubmissionStatus("Successfully added event.");
+                reset();
+                setSelectedLocation(null);
+                setLocationQuery("");
+            } else {
+                const errorData = await response.json();
+                setSubmissionStatus(errorData.error || "Error adding event.");
+            }
         } catch (error) {
             console.error("Error during fetch:", error);
             setSubmissionStatus("Error adding event.");
         }
+    }
+
+    // Show loading while checking auth
+    if (isLoading) {
+        return (
+            <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full"></div>
+            </main>
+        );
+    }
+
+    // Show access denied for non-authenticated users
+    if (!user) {
+        return (
+            <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-md mx-auto">
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                        <div className="h-2 bg-gradient-to-r from-rose-500 to-pink-500"></div>
+                        <div className="p-8 text-center">
+                            <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <h1 className="text-2xl font-bold text-gray-800 mb-2">Sign In Required</h1>
+                            <p className="text-gray-600 mb-6">
+                                Only registered organizations can add charity events. Please sign in to continue.
+                            </p>
+                            <Link
+                                href="/signin"
+                                className="inline-block bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl px-6 py-3 font-semibold hover:shadow-lg transition"
+                            >
+                                Sign In
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        );
     }
 
     return (
