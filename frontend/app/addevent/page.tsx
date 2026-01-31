@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Card } from "@/components/ui/card";
 import { NewEvent } from "@/types/NewEvent";
 
 export default function AddEvent() {
@@ -46,40 +45,87 @@ export default function AddEvent() {
     });
 
     return (
-        <main className="flex min-h-screen flex-col p-16">
-            <h1 className="text-4xl font-bold mb-8 flex justify-center">Add a New Charity Event</h1>
-            <Card className="p-8 w-2/3 mx-auto">
-                <form className="flex flex-col space-y-6" onSubmit={handleSubmit(addEvent)}>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Event Name</label>
-                        <input type="text" id="eventName" className="border border-gray-300 rounded-md p-2 " placeholder="Name" {...register("eventName", { required: true })} />
-                    </div>
-                     <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Event Host</label>
-                        <input type="text" id="eventHost" className="border border-gray-300 rounded-md p-2 " placeholder="Host Name" {...register("eventHost", { required: true })} />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Date</label>
-                        <input type="date" id="date" className="border border-gray-300 rounded-md p-2" {...register("date", { required: true })} />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Location</label>
-                        <input type="text" id="location" className="border border-gray-300 rounded-md p-2" {...register("location", { required: true })} />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Description and Information</label>
-                        <textarea id="description" className="border border-gray-300 rounded-md p-2" placeholder="Enter description here"rows={4} {...register("description", { required: false })}></textarea>
-                    </div>
-                    <button type="submit" className="bg-blue-600 text-white rounded-md p-3 font-semibold hover:bg-blue-700 transition">
-                        Submit Event
-                    </button>
-                    {(submissionStatus != null) ? 
-                        (submissionStatus == "Successfully added event.") ? 
-                        (<p className="mt-4 text-center font-medium text-green-600">{submissionStatus}</p>)
-                        : (<p className="mt-4 text-center font-medium text-red-600">{submissionStatus}</p>)
-                    : null}
-                </form>
-            </Card>
+        <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mx-auto">
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl font-bold text-gray-800">
+                        Host a <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Charity Event</span>
+                    </h1>
+                    <p className="mt-3 text-gray-600">Share your event with the community</p>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div className="h-2 bg-gradient-to-r from-rose-500 to-pink-500"></div>
+                    <form className="p-8 space-y-6" onSubmit={handleSubmit(addEvent)}>
+                        <div className="flex flex-col">
+                            <label className="mb-2 text-sm font-medium text-gray-700">Event Name</label>
+                            <input
+                                type="text"
+                                id="eventName"
+                                className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                placeholder="Give your event a name"
+                                {...register("eventName", { required: true })}
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="mb-2 text-sm font-medium text-gray-700">Host / Organization</label>
+                            <input
+                                type="text"
+                                id="eventHost"
+                                className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                placeholder="Who is hosting this event?"
+                                {...register("eventHost", { required: true })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="flex flex-col">
+                                <label className="mb-2 text-sm font-medium text-gray-700">Date</label>
+                                <input
+                                    type="date"
+                                    id="date"
+                                    className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                    {...register("date", { required: true })}
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="mb-2 text-sm font-medium text-gray-700">Location</label>
+                                <input
+                                    type="text"
+                                    id="location"
+                                    className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                    placeholder="Where is it happening?"
+                                    {...register("location", { required: true })}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="mb-2 text-sm font-medium text-gray-700">Description</label>
+                            <textarea
+                                id="description"
+                                className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition resize-none"
+                                placeholder="Tell people what this event is about..."
+                                rows={4}
+                                {...register("description", { required: false })}
+                            ></textarea>
+                        </div>
+                        <button
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl p-4 font-semibold hover:shadow-lg hover:scale-[1.02] transition"
+                        >
+                            Create Event
+                        </button>
+                        {submissionStatus && (
+                            <div className={`p-4 rounded-xl text-center font-medium ${
+                                submissionStatus === "Successfully added event."
+                                    ? "bg-green-50 text-green-600 border border-green-200"
+                                    : "bg-red-50 text-red-600 border border-red-200"
+                            }`}>
+                                {submissionStatus}
+                            </div>
+                        )}
+                    </form>
+                </div>
+            </div>
         </main>
     );
 }
