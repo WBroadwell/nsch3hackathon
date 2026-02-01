@@ -93,4 +93,5 @@ if __name__ == "__main__":
         seed_database()
 
     # Start the development server on port 5000
-    app.run(debug=True)
+    # host="0.0.0.0" allows connections from other Docker containers
+    app.run(host="0.0.0.0", port=5000, debug=True)

@@ -1,0 +1,85 @@
+# =============================================================================
+# Docker Compose Configuration
+#
+# Orchestrates the CharityMap application with three services:
+# - db: PostgreSQL database
+# - backend: Flask API server
+# - frontend: Next.js web application
+#
+# Usage:
+#   docker-compose up --build     # Build and start all services
+#   docker-compose down           # Stop all services
+#   docker-compose down -v        # Stop and remove volumes (clears database)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database (internal only - not exposed)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: charitymap-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: charitymap
+      POSTGRES_PASSWORD: charitymap_password
+      POSTGRES_DB: charitymap
+    volumes:
+      # Persist database data between container restarts
+      - postgres_data:/var/lib/postgresql/data
+    # No ports exposed - only accessible within Docker network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U charitymap -d charitymap"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Flask Backend API (internal only - not exposed)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: charitymap-backend
+    restart: unless-stopped
+    environment:
+      # Database connection string pointing to the db service
+      SQLALCHEMY_DATABASE_URI: postgresql://charitymap:charitymap_password@db:5432/charitymap
+      # JWT secret for token signing (change in production!)
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+    # No ports exposed - only accessible via frontend proxy
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Next.js Frontend (only exposed service)
+  # Proxies /api/* requests to the backend internally
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Build-time argument for the backend URL
+        # Uses /api prefix which gets proxied to backend via next.config.ts rewrites
+        NEXT_PUBLIC_BACKEND_URL: /api
+    container_name: charitymap-frontend
+    restart: unless-stopped
+    environment:
+      # Client-side API calls use /api prefix (proxied to backend)
+      NEXT_PUBLIC_BACKEND_URL: /api
+      # Internal backend URL for server-side proxy rewrites
+      INTERNAL_BACKEND_URL: http://backend:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    name: charitymap-postgres-data

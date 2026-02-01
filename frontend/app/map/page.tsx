@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Event } from "@/types/Event";
+import { parseLocalDate } from "@/lib/utils";
 
 // Dynamically import the map component to avoid SSR issues with Leaflet
 const MapComponent = dynamic(() => import("@/components/MapComponent"), {
@@ -86,11 +87,22 @@ export default function MapPage() {
   }, []);
 
   // Filter events within 50 miles when user location or events change
+  // Also filters out events that have already passed
   const filteredEvents = useMemo(() => {
     if (!userLocation || events.length === 0) return [];
 
+    // Get today's date at midnight for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const eventsWithDistance = events
+      // Filter out events without coordinates
       .filter((event) => event.latitude != null && event.longitude != null)
+      // Filter out past events
+      .filter((event) => {
+        const eventDate = parseLocalDate(event.date as unknown as string);
+        return eventDate >= today;
+      })
       .map((event) => {
         const distance = calculateDistance(
           userLocation.lat,
